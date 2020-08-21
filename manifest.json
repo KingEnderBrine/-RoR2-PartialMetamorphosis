@@ -1,0 +1,10 @@
+{
+    "name": "PartialMetamorphosis",
+    "version_number": "1.0.0",
+    "website_url": "https://github.com/KingEnderBrine/-RoR2-PartialMetamorphosis",
+    "description": "Allows Metamorphosis artifact to be applied only on those who selected it",
+    "dependencies": [
+        "bbepis-BepInExPack-5.3.1",
+	    "tristanmcpherson-R2API-2.5.6"
+    ]
+}
