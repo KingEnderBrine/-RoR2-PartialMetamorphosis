@@ -13,6 +13,12 @@ Mod was made to play with friends, who don't want to play as random survivors.
 
 # Changelog
 
+**1.0.1**
+
+* Added missing `R2APISubmoduleDependency`
+
+* Fixed the issue when the name in multiplayer was missing when using this mod.
+
 **1.0.0**
 
 * Mod release.

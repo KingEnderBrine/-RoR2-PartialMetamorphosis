@@ -9,11 +9,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace PickupPickerPlus
+namespace PartialMetamorphosis
 {
     [NetworkCompatibility(CompatibilityLevel.NoNeedForSync)]
     [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.KingEnderBrine.PartialMetamorphosis", "Partial Metamorphosis", "1.0.0")]
+    [R2APISubmoduleDependency(nameof(CommandHelper))]
+    [BepInPlugin("com.KingEnderBrine.PartialMetamorphosis", "Partial Metamorphosis", "1.0.1")]
     public class PartialMetamorphosis : BaseUnityPlugin
     {
         private static readonly HashSet<NetworkUser> votedForMetamorphosis = new HashSet<NetworkUser>();
