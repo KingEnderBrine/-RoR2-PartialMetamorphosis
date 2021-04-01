@@ -4,6 +4,9 @@ Only the host must have this mod for it to work.
 Mod was made to play with friends, who don't want to play as random survivors.
 
 # Changelog
+**1.2.0**
+
+* Removed r2api dependency
 
 **1.1.0**
 

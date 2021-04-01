@@ -3,20 +3,22 @@ using BepInEx.Configuration;
 using InLobbyConfig;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
-using R2API.Utils;
+using MonoMod.RuntimeDetour.HookGen;
 using RoR2;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
+[assembly: R2API.Utils.ManualNetworkRegistration]
+[assembly: EnigmaticThunder.Util.ManualNetworkRegistration]
 namespace PartialMetamorphosis
 {
-    [NetworkCompatibility(CompatibilityLevel.NoNeedForSync)]
     [BepInDependency("com.KingEnderBrine.InLobbyConfig")]
-    [BepInDependency("com.bepis.r2api")]
-    [BepInPlugin("com.KingEnderBrine.PartialMetamorphosis", "Partial Metamorphosis", "1.1.0")]
+    [BepInPlugin("com.KingEnderBrine.PartialMetamorphosis", "Partial Metamorphosis", "1.2.0")]
     public class PartialMetamorphosisPlugin : BaseUnityPlugin
     {
+        private static readonly MethodInfo startRun = typeof(PreGameController).GetMethod(nameof(PreGameController.StartRun), BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly HashSet<NetworkUser> votedForMetamorphosis = new HashSet<NetworkUser>();
         private static ConfigEntry<bool> IsEnabled { get; set; }
 
@@ -26,8 +28,8 @@ namespace PartialMetamorphosis
         {
             IsEnabled = Config.Bind("Main", "enabled", true, "Is mod enabled");
 
-            On.RoR2.PreGameController.StartRun += PreGameControllerStartRun;
-            IL.RoR2.CharacterMaster.Respawn += CharacterMasterRespawn;
+            HookEndpointManager.Add(startRun, (Action<Action<PreGameController>, PreGameController>)PreGameControllerStartRun);
+            HookEndpointManager.Modify(typeof(CharacterMaster).GetMethod(nameof(CharacterMaster.Respawn)), (ILContext.Manipulator)CharacterMasterRespawn);
 
             ModConfig = new ModConfigEntry
             {
@@ -39,15 +41,15 @@ namespace PartialMetamorphosis
 
         public void Destroy()
         {
-            On.RoR2.PreGameController.StartRun -= PreGameControllerStartRun;
-            IL.RoR2.CharacterMaster.Respawn -= CharacterMasterRespawn;
+            HookEndpointManager.Remove(startRun, (Action<Action<PreGameController>, PreGameController>)PreGameControllerStartRun);
+            HookEndpointManager.Unmodify(typeof(CharacterMaster).GetMethod(nameof(CharacterMaster.Respawn)), (ILContext.Manipulator)CharacterMasterRespawn);
+            
             ModConfigCatalog.Remove(ModConfig);
         }
 
         private static void CharacterMasterRespawn(ILContext il)
         {
             var c = new ILCursor(il);
-
             c.GotoNext(x => x.MatchLdsfld(typeof(RoR2Content.Artifacts), "randomSurvivorOnRespawnArtifactDef"));
             c.Index += 3;
             var endIf = c.Previous.Operand;
@@ -61,7 +63,7 @@ namespace PartialMetamorphosis
             return !IsEnabled.Value || votedForMetamorphosis.Any(el => el.master == master);
         }
 
-        private static void PreGameControllerStartRun(On.RoR2.PreGameController.orig_StartRun orig, PreGameController self)
+        private static void PreGameControllerStartRun(Action<PreGameController> orig, PreGameController self)
         {
             votedForMetamorphosis.Clear();
             var choice = RuleCatalog.FindChoiceDef("Artifacts.RandomSurvivorOnRespawn.On");
@@ -78,4 +80,16 @@ namespace PartialMetamorphosis
             orig(self);
         }
     }
+}
+
+namespace R2API.Utils
+{
+    [AttributeUsage(AttributeTargets.Assembly)]
+    public class ManualNetworkRegistrationAttribute : Attribute { }
+}
+
+namespace EnigmaticThunder.Util
+{
+    [AttributeUsage(AttributeTargets.Assembly)]
+    public class ManualNetworkRegistrationAttribute : Attribute { }
 }
