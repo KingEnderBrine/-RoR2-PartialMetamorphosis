@@ -15,7 +15,7 @@ using System.Reflection;
 namespace PartialMetamorphosis
 {
     [BepInDependency("com.KingEnderBrine.InLobbyConfig")]
-    [BepInPlugin("com.KingEnderBrine.PartialMetamorphosis", "Partial Metamorphosis", "1.2.0")]
+    [BepInPlugin("com.KingEnderBrine.PartialMetamorphosis", "Partial Metamorphosis", "1.2.1")]
     public class PartialMetamorphosisPlugin : BaseUnityPlugin
     {
         private static readonly MethodInfo startRun = typeof(PreGameController).GetMethod(nameof(PreGameController.StartRun), BindingFlags.NonPublic | BindingFlags.Instance);
@@ -50,7 +50,7 @@ namespace PartialMetamorphosis
         private static void CharacterMasterRespawn(ILContext il)
         {
             var c = new ILCursor(il);
-            c.GotoNext(x => x.MatchLdsfld(typeof(RoR2Content.Artifacts), "randomSurvivorOnRespawnArtifactDef"));
+            c.GotoNext(x => x.MatchCall(typeof(RoR2Content.Artifacts), "get_randomSurvivorOnRespawnArtifactDef"));
             c.Index += 3;
             var endIf = c.Previous.Operand;
             c.Emit(OpCodes.Ldarg_0);
