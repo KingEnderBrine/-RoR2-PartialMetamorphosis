@@ -4,6 +4,10 @@ Only the host must have this mod for it to work.
 Mod was made to play with friends, who don't want to play as random survivors.
 
 # Changelog
+**1.2.2**
+
+* Added config for how much stages should pass until metamorphosis will be applied next time.
+
 **1.2.1**
 
 * Fixed for `1.1.1.2` RoR version.

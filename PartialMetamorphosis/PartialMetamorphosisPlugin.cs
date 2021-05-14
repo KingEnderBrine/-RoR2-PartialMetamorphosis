@@ -1,6 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
 using InLobbyConfig;
+using InLobbyConfig.Fields;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour.HookGen;
@@ -9,24 +10,25 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
-[assembly: R2API.Utils.ManualNetworkRegistration]
-[assembly: EnigmaticThunder.Util.ManualNetworkRegistration]
 namespace PartialMetamorphosis
 {
-    [BepInDependency("com.KingEnderBrine.InLobbyConfig")]
-    [BepInPlugin("com.KingEnderBrine.PartialMetamorphosis", "Partial Metamorphosis", "1.2.1")]
+    [BepInDependency("com.KingEnderBrine.InLobbyConfig", BepInDependency.DependencyFlags.SoftDependency)]
+    [BepInPlugin("com.KingEnderBrine.PartialMetamorphosis", "Partial Metamorphosis", "1.2.2")]
     public class PartialMetamorphosisPlugin : BaseUnityPlugin
     {
         private static readonly MethodInfo startRun = typeof(PreGameController).GetMethod(nameof(PreGameController.StartRun), BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly HashSet<NetworkUser> votedForMetamorphosis = new HashSet<NetworkUser>();
         private static ConfigEntry<bool> IsEnabled { get; set; }
+        private static ConfigEntry<int> StagesBetweenMetamorphosis { get; set; }
 
         private ModConfigEntry ModConfig { get; set; }
 
         public void Awake()
         {
             IsEnabled = Config.Bind("Main", "enabled", true, "Is mod enabled");
+            StagesBetweenMetamorphosis = Config.Bind("Main", nameof(StagesBetweenMetamorphosis), 0, "How much stages should pass until metamorphosis will be applied next time. 0 - metamorphosis will be applied every stage");
 
             HookEndpointManager.Add(startRun, (Action<Action<PreGameController>, PreGameController>)PreGameControllerStartRun);
             HookEndpointManager.Modify(typeof(CharacterMaster).GetMethod(nameof(CharacterMaster.Respawn)), (ILContext.Manipulator)CharacterMasterRespawn);
@@ -34,8 +36,13 @@ namespace PartialMetamorphosis
             ModConfig = new ModConfigEntry
             {
                 DisplayName = "Partial Metamorphosis",
-                EnableField = new InLobbyConfig.Fields.BooleanConfigField("", () => IsEnabled.Value, (newValue) => IsEnabled.Value = newValue)
+                EnableField = new BooleanConfigField("", () => IsEnabled.Value, (newValue) => IsEnabled.Value = newValue),
+
             };
+            ModConfig.SectionFields["Main"] = new List<IConfigField>
+            {
+                ConfigFieldUtilities.CreateFromBepInExConfigEntry(StagesBetweenMetamorphosis)
+            }; 
             ModConfigCatalog.Add(ModConfig);
         }
 
@@ -60,7 +67,9 @@ namespace PartialMetamorphosis
 
         private static bool ShouldChangeCharacter(CharacterMaster master)
         {
-            return !IsEnabled.Value || votedForMetamorphosis.Any(el => el.master == master);
+            return !IsEnabled.Value || (
+                Run.instance.stageClearCount % (StagesBetweenMetamorphosis.Value + 1) == 0 && 
+                votedForMetamorphosis.Any(el => el.master == master));
         }
 
         private static void PreGameControllerStartRun(Action<PreGameController> orig, PreGameController self)
@@ -80,16 +89,4 @@ namespace PartialMetamorphosis
             orig(self);
         }
     }
-}
-
-namespace R2API.Utils
-{
-    [AttributeUsage(AttributeTargets.Assembly)]
-    public class ManualNetworkRegistrationAttribute : Attribute { }
-}
-
-namespace EnigmaticThunder.Util
-{
-    [AttributeUsage(AttributeTargets.Assembly)]
-    public class ManualNetworkRegistrationAttribute : Attribute { }
 }
