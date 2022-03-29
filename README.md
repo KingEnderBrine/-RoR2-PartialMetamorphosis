@@ -4,6 +4,10 @@ Only the host must have this mod for it to work.
 Mod was made to play with friends, who don't want to play as random survivors.
 
 # Changelog
+**1.3.0**
+
+* Fixes for `Survivors of the Void` update
+
 **1.2.2**
 
 * Added config for how much stages should pass until metamorphosis will be applied next time.
