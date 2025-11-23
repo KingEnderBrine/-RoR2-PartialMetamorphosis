@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
+using BepInEx.Logging;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour.HookGen;
@@ -9,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Security.Permissions;
+using UnityEngine;
 
 [assembly: SecurityPermission(SecurityAction.RequestMinimum, SkipVerification = true)]
 [assembly: AssemblyVersion(PartialMetamorphosis.PartialMetamorphosisPlugin.Version)]
@@ -20,11 +22,15 @@ namespace PartialMetamorphosis
     {
         public const string GUID = "com.KingEnderBrine.PartialMetamorphosis";
         public const string Name = "Partial Metamorphosis";
-        public const string Version = "1.3.0";
+        public const string Version = "1.3.1";
 
         private static readonly MethodInfo startRun = typeof(PreGameController).GetMethod(nameof(PreGameController.StartRun), BindingFlags.NonPublic | BindingFlags.Instance);
-        private static readonly MethodInfo respawn = typeof(CharacterMaster).GetMethod(nameof(CharacterMaster.Respawn));
+        private static readonly MethodInfo respawn = typeof(CharacterMaster).GetMethod(nameof(CharacterMaster.Respawn), new[] { typeof(Vector3), typeof(Quaternion), typeof(bool) });
         private static readonly HashSet<NetworkUser> votedForMetamorphosis = new HashSet<NetworkUser>();
+
+        internal static PartialMetamorphosisPlugin Instance { get; private set; }
+        internal static ManualLogSource InstanceLogger => Instance.Logger;
+
         internal static ConfigEntry<bool> IsEnabled { get; set; }
         internal static ConfigEntry<int> StagesBetweenMetamorphosis { get; set; }
 
@@ -67,17 +73,22 @@ namespace PartialMetamorphosis
 
         private static void PreGameControllerStartRun(Action<PreGameController> orig, PreGameController self)
         {
-            votedForMetamorphosis.Clear();
-            var choice = RuleCatalog.FindChoiceDef("Artifacts.RandomSurvivorOnRespawn.On");
-            foreach (var user in NetworkUser.readOnlyInstancesList)
+            try
             {
-                var voteController = PreGameRuleVoteController.FindForUser(user);
-                var isMetamorphosisVoted = voteController.IsChoiceVoted(choice);
-
-                if (isMetamorphosisVoted)
+                votedForMetamorphosis.Clear();
+                var choice = RuleCatalog.FindChoiceDef("Artifacts.RandomSurvivorOnRespawn.On");
+                foreach (var user in NetworkUser.readOnlyInstancesList)
                 {
-                    votedForMetamorphosis.Add(user);
+                    var voteController = PreGameRuleVoteController.FindForUser(user);
+                    if (voteController && voteController.IsChoiceVoted(choice))
+                    {
+                        votedForMetamorphosis.Add(user);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                InstanceLogger.LogError(ex.ToString());
             }
             orig(self);
         }

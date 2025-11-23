@@ -4,9 +4,13 @@ Only the host must have this mod for it to work.
 Mod was made to play with friends, who don't want to play as random survivors.
 
 # Changelog
+**1.3.1**
+
+* Fixes for `Alloyed Collective` update.
+
 **1.3.0**
 
-* Fixes for `Survivors of the Void` update
+* Fixes for `Survivors of the Void` update.
 
 **1.2.2**
 
