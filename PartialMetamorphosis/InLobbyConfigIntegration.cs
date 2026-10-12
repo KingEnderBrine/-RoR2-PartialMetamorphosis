@@ -30,10 +30,6 @@ namespace PartialMetamorphosis
 
             };
 
-            modConfig.SectionFields["Main"] = new List<IConfigField>
-            {
-                ConfigFieldUtilities.CreateFromBepInExConfigEntry(PartialMetamorphosisPlugin.StagesBetweenMetamorphosis)
-            }; 
             ModConfigCatalog.Add(modConfig);
             ModConfig = modConfig;
         }
